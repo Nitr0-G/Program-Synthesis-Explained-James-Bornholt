@@ -1,0 +1,310 @@
+
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>Program Synthesis Explained — James Bornholt</title>
+    <meta name="description" content="An introduction to the field of program synthesis, the idea that computers can write programs automatically if we just tell them what we want.">
+
+    <meta name="twitter:card" content="summary">
+    <meta property="og:title" content="Program Synthesis Explained">
+    <meta property="og:description" content="An introduction to the field of program synthesis, the idea that computers can write programs automatically if we just tell them what we want.">
+
+    <link rel="alternate" type="application/rss+xml" href="https://www.cs.utexas.edu/~bornholt/posts.xml">
+
+    <link rel="stylesheet" href="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/css.css" type="text/css">
+    <link rel="stylesheet" href="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/carlito.css" type="text/css">
+    <link rel="stylesheet" href="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/normalize.min.css" type="text/css">
+    <link rel="stylesheet" href="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/main.css" type="text/css">
+    <link rel="stylesheet" href="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/highlight.css" type="text/css">
+
+    <script src="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/main.js" async=""></script>
+</head>
+<body class="posts-2015-01-06-synthesis-explained page">
+    
+    <header>
+    <div id="header-container">
+        <div id="header">
+            
+            <div id="header-content">
+                <h1><a href="https://www.cs.utexas.edu/~bornholt/">James Bornholt</a></h1>
+                <div class="header-block">
+                    Assistant Professor of Computer Science<br><a href="https://cs.utexas.edu/">University of Texas at Austin</a>
+                </div>
+                <div class="header-block">
+                    <div class="header-link"><i class="icon-mail"></i> <a target="_blank" id="contact" href="mailto:bornholt@cs.utexas.edu">bornholt@cs.utexas.edu</a></div><br>
+                    <div class="header-link"><i class="icon-building"></i> <a target="_blank" href="https://goo.gl/maps/MLgA1YBr1vg8AzsD9">GDC 5.720</a></div><br>
+                    <div class="header-link header-link-pad"><i class="icon-doc"></i> <a href="https://www.cs.utexas.edu/~bornholt/cv.html">CV</a></div>
+                    <div class="header-link"><i class="icon-github"></i> <a href="https://github.com/jamesbornholt">GitHub</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </header>
+    
+    <div id="content">
+        <h2 class="blog-title">Объяснение Program Synthesis</h2>
+<h3 class="blog-date"> 6 Января 2015</h3>
+<h4 class="translator">Перевел: Nitr0-G aka Я</h4>
+
+
+<blockquote class="blog-summary"><p>Вступительная часть о 
+program synthesis, основная идея заключается в том, что computers могут писать программы автоматически, если мы просто скажем им то, что хотим написать</p>
+</blockquote>
+
+
+<p>Professor <a href="http://homes.cs.washington.edu/~luisceze/">Luis Ceze</a>- отличный проффесор, но у него есть один хорошо скрытый, постыдный секрет: его докторская степень по <em>computer architecture</em>.<sup id="fnref:sorry" role="doc-noteref"><a href="#fn:sorry" class="footnote" rel="footnote">1</a></sup>Я работаю над исправлением этого серьезного заблуждения, окружив его <a href="http://homes.cs.washington.edu/~djg/">экспертами</a> по <a href="http://homes.cs.washington.edu/~emina/">языкам программирования</a>. Но пришло время внести свой собственный вклад в первую часть моей серии из моих <a href="http://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools">1,009 частей</a> серий <em>"Programming Languages for Computer Architecture Professors"</em>. В этой статье мы поговорим о <strong>program synthesis</strong>.<sup id="fnref:507" role="doc-noteref"><a href="#fn:507" class="footnote" rel="footnote">2</a></sup></p>
+
+<blockquote class="callout">
+  <p>Если вы просто хотите <em>написать свой собственный</em> program synthesizer, то у меня есть <a href="https://homes.cs.washington.edu/~bornholt/post/building-synthesizer.html">quick tutorial</a> для этого.</p>
+</blockquote>
+
+<h3 id="synthesis">Synthesis?</h3>
+
+<p>Synthesis одна из самых популярных тем на сегодняшний день. Эту тему можно сравнить с <a href="http://www.digitalstrategyconsulting.com/netimperative/news/google%20ai1.jpg">deep learning</a> или <a href="http://www.adrants.com/images/sxswcats_bigdatacruncher.jpg">big data</a>. Но что такое program synthesis?</p>
+
+<p>Немного странно, что мы программируем компьютеры таким образом, давая им четкие инструкции. Конечно, инструкции - это то, чему компьютеры умеют следовать чрезвычайно быстро, но это не обязательно то, что люди умеют писать хорошо. Не было бы более эффективно для нас сообщить компьютеру, <em>что</em>мы хотим, чтобы программа делала, и предоставить компьютеру самому разбираться в деталях того <em>как</em>
+это сделать? Это предельная абстракция: программист, который только говорит компьютеру, чего он хочет, а не как это сделать, полностью освобожден от каких-либо деталей реализации. Это и есть обещание program synthesis.</p>
+
+<p>Однако это определение немного расплывчато; наша ближайшая цель на самом деле не в том, чтобы иметь возможность приказать <a href="https://developer.apple.com/xcode/">Xcode</a>“создать игру, в которой я запускаю симпатичных, но странно круглых птичек в твердые объекты на высоких скоростях” (хотя App Store, безусловно, не помешало бы больше клонов Angry Birds). Вероятно, в какой-то момент в этот процесс все еще будет вовлечен человеческий опыт. Непосредственная цель синтеза программ - автоматизировать программные мелочи (у кого есть время изобретать хитроумные хаки?) и помочь программистам сосредоточиться на общей картине.</p>
+
+<p>Во время выполнения <a href="http://courses.cs.washington.edu/courses/cse507/14au/">классного проекта</a> в прошлом квартале мне нужно было реализовать несколько самых современных алгоритмов синтеза программ. Давайте поговорим о том, как они работают!</p>
+
+<h3 id="specifying-program-behaviour">Определение поведения программы</h3>
+
+<p>У нас есть хорошо изученные языки программирования, которые говорят компьютерам, как что-то делать. Но эти языки бесполезны для того, чтобы сообщить program 
+synthesiser'у <em>что</em> мы хотим, чтобы программа делала. То, что мы хотим записать, - это своего рода <em>спецификация</em>
+ того, что должна делать программа, и заставить synthesiser создать программу, удовлетворяющую этой спецификации. Наиболее удобный способ записи спецификации может быть разным, но вот несколько стилей:</p>
+
+<ul>
+  <li>Полная<em>формальная спецификация</em> в виде формулы в некоторой логике (скажем, <a href="http://en.wikipedia.org/wiki/First-order_logic">first-order</a>). Если мы хотим, чтобы программа <em>P</em> добавила 2 к своим входным данным, мы могли бы записать логическую формулу ∀<em>x</em>. <em>P</em>(<em>x</em>) = <em>x</em>+2.</li>
+  <li>Набор пар input/output в качестве <em>примеров</em> того, что должна делать программа. Итак, для программы, которая добавляет 2 к своим входным данным, мы могли бы предоставить список пар типа (5, 7), (-3, -1), ....</li>
+  <li><em>Демонстрации</em> того, как программа должна вычислять свои output данные, аналогичны парам input/output, но могут также содержать некоторые промежуточные этапы вычисления, чтобы показать, <em>как</em> преобразовать input данные в output.</li>
+  <li><em>Эталонная реализация</em> для сравнения. Это кажется странным – зачем пытаться синтезировать программу, реализация которой у нас уже есть? – но окажется полезным в некоторых примерах, которые я рассмотрю позже.</li>
+</ul>
+
+<p>Полная формальная спецификация подходит для стиля <em>deductive</em>
+ program synthesis,  где мы пытаемся вывести реализацию на основе спецификации и набора логических аксиом. Например,  <a href="http://dl.acm.org/citation.cfm?id=512566">Denali superoptimiser</a>
+ использует логическую спецификацию и аксиоматизацию набора команд и исследует все возможные способы реализации спецификации. Хотя теоретически это звучит заманчиво, это зависит от наличия полной аксиоматизации целевого языка и полной формальной спецификации, получить которые может быть трудно.</p>
+
+<p>Напротив, <em>inductive</em> program synthesis допускает менее формальную спецификацию и, вместо того чтобы делать логические выводы непосредственно из этой спецификации, применяет метод итеративного поиска для поиска реализации. Преимущество итеративного подхода заключается в гибкости спецификации, но он может столкнуться со значительными проблемами масштабирования. Поскольку меня больше всего интересуют более ленивые типы спецификаций, я сосредоточусь на  inductive program synthesis.</p>
+
+<h3 id="inductive-program-synthesis">Inductive program synthesis</h3>
+
+<p>Специфический вид inductive synthesis на котором я собираюсь сосредоточиться, - это <a href="http://dl.acm.org/citation.cfm?id=1168907">counterexample-guided inductive synthesis</a> (CEGIS). Идея состоит в том, чтобы две части работали рука об руку в цикле:</p>
+
+<p><img src="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/cegis-loop.png" alt="the CEGIS loop"></p>
+
+<p>Мы начинаем с некоторого уточнения <em>спецификаций</em> желаемой программы. A <em>synthesiser</em> создает программу-кандидат, которая могла бы удовлетворять спецификации, а затем <em>verifier</em>
+ решает, действительно ли эта программа-кандидат удовлетворяет спецификации. Если это так, то конец и работа завершается! Если нет, то verifier замыкает цикл, предоставляя synthesiser'у своего рода <em>feedback</em> информацию из которого он будет использовать для управления поиском новых программ-кандидатов.</p>
+
+<p>Это называется “counterexample-guided” потому что feedback is традиционно является <em>counterexample'ом</em>
+ – новым input'ом, по которому программа–кандидат не удовлетворяла спецификации. Но я собираюсь немного злоупотребить этой схемой и описать некоторые методы, в которых feedback  на самом деле не является counterexample'ом(контрпримером).</p>
+
+<p>Есть несколько пробелов, которые мы должны заполнить, чтобы определить новую технологию синтеза CEGIS:</p>
+
+<ul>
+  <li>как указать <strong>спецификацию</strong> для желаемого поведения</li>
+  <li>как <strong>synthesiser</strong> программы-кандидаты</li>
+  <li>как <strong>verify</strong>  программу-кандидат на соответствие спецификации</li>
+  <li>как обеспечить <strong>feedback</strong> для будущих кандидатов</li>
+</ul>
+
+<p>До сих пор мы ничего не говорили о том: 
+когда и даже если цикл CEGIS когда-либо завершится. Одной из сильных сторон многих методов CEGIS является их эмпирическая тенденция требовать лишь очень небольшого количества циклов, несмотря на то, что объем программ, которые мы можем прогнать через наш цикл невероятно велик.</p>
+
+<p>Я собираюсь описать три различных метода inductive program synthesis techniques, которые соответствуют этой модели CEGIS.</p>
+
+<h3 id="oracle-guided-synthesis">Oracle-guided synthesis</h3>
+
+<p>Jha et al’s <a href="http://www.eecs.berkeley.edu/~sseshia/pubdir/synth-icse10.pdf"><em>oracle-guided</em> synthesis</a>  предполагает, что у вас уже есть реализация программы, которую вы хотите синтезировать, которую они называют программой <em>oracle</em>. Эта реализация является <strong>спецификацией</strong>
+ для oracle-guided synthesis. Мы рассматриваем oracle как черный ящик, который мы можем выполнить на произвольных входных данных; нам не нужно проверять реализацию oracle.</p>
+
+<p>Мы также начинаем с набора <em>test cases</em>, которые представляют собой пары input/output. Поскольку у нас есть oracle, мы можем создавать тестовые примеры, просто генерируя случайные входные данные и запрашивая у oracle правильный ответ для этих входных данных.</p>
+
+<h4 id="synthesis-step">Synthesis step</h4>
+
+<p>Мы предоставляем oracle-guided synthesis с библиотекой of <em>components</em> из которых синтезатор создает программы-кандидаты. The <strong>synthesis</strong> step is going to arrange these components into a program in <a href="http://en.wikipedia.org/wiki/Static_single_assignment_form">static single assignment form</a>.
+ In essence, it’s going to take all the components, and decide how to 
+plug their inputs and outputs together to form a program. (This 
+formulation disallows loops, so the programs we generate will always be 
+loop-free.)</p>
+
+<p>Например, вот библиотека из трех компонентов – two adds и a square root – и возможный способ соединить их вместе:</p>
+
+<p><img src="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/oracle-components.png" alt="oracle-guided synthesis strings components together" width="65%"></p>
+
+<p>Программа, реализуемая этой последовательностью "стрелок", представлена в форме SSA:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>program(x, y):
+    o1 = add(x, y)
+    o2 = add(o1, y)
+    o3 = sqrt(o1)
+    return o3
+</code></pre></div></div>
+
+<p>Обратите внимание, что у нас есть две копии компонента <code class="language-plaintext highlighter-rouge">add</code>
+; форма SSA просто соединяет каждый компонент вместе, поэтому, если мы хотим, чтобы конечная программа использовала два дополнения, мы должны предоставить по крайней мере два компонента <code class="language-plaintext highlighter-rouge">add</code>. Обратите также внимание, что <code class="language-plaintext highlighter-rouge">o2</code>  - это мертвый код, поскольку его выходные данные не используются. Это прекрасно и избавляет нас от необходимости заранее <em>точно определять</em> , какое кол-во компонентов будет использоваться в конечной программе. Вместо этого нам нужно только указать верхнюю границу, и syntheser может генерировать dead code для компонентов, которые он не хочет использовать.</p>
+
+<p>The synthesiser использует test cases чтобы ограничить то, как компоненты могут быть связаны друг с другом. Он использует SMT-решатель, чтобы решить, какие компоненты следует объединить, чтобы программа была корректной для всех тестовых примеров. Если SMT–решатель выдаёт unsat или т.п. состояние как return, то ни одна программа, использующая только заданные компоненты, не сможет выполнить тестовые примеры - компонентов <em>недостаточно</em>. В противном случае(т.е. в sat или т.п.) он создает программу в форме SSA, которая удовлетворяет всем тестовым примерам (то есть, <em>P</em> согласуется с oracle <em>O</em> по всем входным данным теста).</p>
+
+<h4 id="verification-step">Verification step</h4>
+
+<p>Если есть решение, мы передаем программу-кандидат на этап <strong>verify</strong>.  Помните, что программа-кандидат удовлетворяет всем тестовым примерам в существующей коллекции. На этапе проверки будет использоваться SMT-решатель для ответа на вопрос:</p>
+
+<blockquote>
+  <p>Существует ли <em>другая</em> программа <em>P’</em>, отличная от программы-кандидата <em>P</em>, которая также удовлетворяет всем тестовым примерам в существующей коллекции, но по некоторым входным данным <em>z</em> отличается <em>P</em>?</p>
+</blockquote>
+
+<p>Давайте немного разберем этот вопрос. Мы получили от synthesiser программу-кандидат <em>P</em> , которая удовлетворяет всем тестовым примерам. То, о чем мы сейчас просим верификатор, - <em>это новый</em> тестовый input <em>z</em> и <em>новая</em> программа <em>P’</em>, так что для input <em>z</em>, <em>P</em> и <em>P’</em> выдают <em>разные</em> outputs. Новая программа <em>P’</em> также будет удовлетворять всем тестовым примерам.</p>
+
+<p>По сути, мы спрашиваем, является ли программа <em>P</em> <em>односмысленной(однозначной)</em>
+ – существует ли более одной программы, которая могла бы удовлетворить всем test
+ cases? Если это так, мы знаем, что еще не закончили, поскольку программы не должны быть двусмысленными!</p>
+
+<p>Мы ничего не спрашиваем о программе oracle. В частности, может случиться так, что <em>P</em> и <em>P’</em> оба дают <em>неправильные</em> ответы на input <em>z</em>; все, что имеет значение для verifier, - это то, что они дают <em>разные</em> ответы.</p>
+
+<p>Например, вот как это работает с двумя тестовыми примерами и теми же компонентами, которые мы видели выше:</p>
+
+<p><img src="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/oracle-table.png" alt="oracle-guided synthesis test cases" width="65%"></p>
+
+<p>Здесь единственными тестовыми input данными, которые у нас есть, являются (0,0) и (1,0). Synthizer выдал нам в качестве кандидата <em>P</em> <code class="language-plaintext highlighter-rouge">sqrt(x)+y</code>,
+ которая удовлетворяла обоим тестовым примерам, поскольку она согласуется с oracle в обоих случаях. Мы попросили verifier создать две вещи: новую программу  <em>P’</em> и новый тестовый input <em>z</em>. В данном случае это было успешно. Это создало новую программу(P’) <code class="language-plaintext highlighter-rouge">x+y</code> и новый тестовый input (4,5). На этом новом тестовом input'е, кандидат <em>P</em> и новая программа <em>P’</em> расходятся во мнениях: sqrt(4)+5 = 7, когда 4+5 = 9. В этом случае оказывается, что <em>обе</em> программы ошибочны, поскольку выходные данные oracle для нового тестового примера равны sqrt(4+5) = 3. Но того факта, что <em>P</em> и <em>P’</em> расходятся во мнениях, достаточно, чтобы отправить нас обратно в цикл с помощью feedback step.</p>
+
+<h4 id="feedback-step">Feedback step</h4>
+
+<p>На <strong>feedback</strong> step будет использован новый test case <em>z</em> , сгенерированный verifier'ом. Он запрашивает у oracle <em>O</em>, каков <em>правильный</em> output для input <em>z</em>, и добавляет результат к набору test cases,которые synthesiser будет использовать при следующем обходе цикла.</p>
+
+<p>В примере этот следующий обход цикла будет последним: единственный способ использовать два adds и один square root для удовлетворения (теперь уже трех) тестовых примеров
+ - <code class="language-plaintext highlighter-rouge">sqrt(x+y)</code>. Таким образом, вопрос, который задаст verifier будет unsat – он не сможет найти вторую <em>P’</em> – и поэтому мы выйдем из цикла.</p>
+
+<p>Чтобы быть полностью корректными, у нас также должен быть какой-то <em>validation oracle</em>, к которому мы обращаемся после завершения цикла CEGIS. Проблема в том, что цикл CEGIS – это гонка - найдем ли мы <em>уникальную</em>
+ P удовлетворяющую тестовым примерам, прежде чем найдем тестовый пример, в котором компонентов недостаточно? Если мы находим уникальную P, мы сразу же разрываем цикл.Но нам, возможно, повезло, что мы не увидели тестового примера, который доказал бы недостаточность компонентов. The 
+validation oracle проверяет, что синтезированная программа действительно удовлетворяет спецификации<em>по всем inputs</em>, а не только по нескольким тестовым примерам.</p>
+
+<h4 id="starting-with-an-existing-program">Starting with an existing program</h4>
+
+<p>Oracle-guided synthesis предполагает, что у вас есть <em>oracle</em>, существующая реализация программы, которую вы пытаетесь синтезировать. На самом деле нам не нужно проверять реализацию; мы рассматриваем ее как черный ящик, который выдает выходные данные, когда мы предоставляем входные данные. Но даже это кажется немного абсурдным: зачем синтезировать программу, которая у нас уже есть?</p>
+
+<p>Авторы используют две области, чтобы проиллюстрировать, почему их методика полезна. Первый - это традиционный набор bit-vector тестов от <a href="http://www.hackersdelight.org/">Hacker’s Delight</a>. Многие
+обобщающие статьи используют эти тесты, потому что они являются примерами
+небольших, неинтуитивных программ. Вместо того чтобы пытаться придумать наиболее
+эффективный способ манипулирования битами, программисты могут написать простую,
+неэффективную реализацию манипулирования bit-vectors, и
+синтезатор использует эту реализацию для создания оптимальной программы.
+Вторая область - это устранение обфускации программ – использование обфусцированной программы
+в качестве oracle и синтез новой, более простой программы, которая соответствует ее
+поведению.</p>
+
+<p>Стоит отметить, что <a href="http://dl.acm.org/citation.cfm?id=1993506">в этом документе</a>
+ к этому используется в основном тот же подход, но вместо того, чтобы требовать oracle, требуется логическое описание желаемого поведения.</p>
+
+<h3 id="stochastic-superoptimisation">Stochastic superoptimisation</h3>
+
+<p>Schkufza et al’s <a href="http://cs.stanford.edu/people/eschkufz/research/asplos291-schkufza.pdf"><em>stochastic superoptimisation</em></a> - это совершенно другой подход к синтезу программ, который я попытаюсь воплотить в CEGIS. Опять же, предполагается, что у вас есть существующая реализация в качестве <strong>спецификации</strong> для сравнения. Для них это не проблема, потому что, как следует из названия, проблема, которую они решают, - это <em>супероптимизация</em>:
+ поиск оптимальной последовательности команд для заданного фрагмента кода. 
+Stochastic superoptimisation выполняет поиск в пространстве программ, чтобы найти новую программу, которая соответствует поведению оригинала, но является более быстрой или эффективной. Именно поисковый аспект делает его формой синтеза программ.</p>
+
+<h4 id="searching-the-space-of-programs">Searching the space of programs</h4>
+
+<p>Каков самый простой способ поиска в пространстве программ? Предположим, мы начинаем со случайно сгенерированной программы. Чтобы решить, какую программу попробовать следующей, мы могли бы просто случайным образом изменить одну из инструкций в программе. Предполагая, что мутации удовлетворяют некоторым базовым свойствам (например, если оптимальная программа содержит инструкцию <code class="language-plaintext highlighter-rouge">add</code> мутации должны быть способны генерировать инструкцию <code class="language-plaintext highlighter-rouge">add</code>
+ этот поиск в конечном итоге приведет к поиску оптимальной программы. Но это, вероятно, займет очень много времени; нет никаких указаний, чтобы решить, на правильном ли мы пути или “близки” ли мы к ответу.</p>
+
+<p>Stochastic superoptimisation использует выборку по методу<a href="http://en.wikipedia.org/wiki/Markov_chain_Monte_Carlo">Markov-chain Monte Carlo (MCMC) sampling</a>
+ для поиска в пространстве программ более управляемым способом. По сути, 
+stochastic superoptimisation определяет функцию затрат, которая измеряет, насколько “хороша” программа-кандидат, и использует MCMC (в частности, <a href="http://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm">Metropolis algorithm</a>)
+ для выборки программ, которые имеют высокий вес по этой функции. Это смещение означает, что поиск MCMC с большей вероятностью приведет к посещению P', которые ближе к оптимальным. Хотя это все еще случайный поиск в очень большом пространстве, смещение означает, что эмпирически stochastic superoptimisation часто быстро обнаруживает правильные P'(т.е. те P к которым нет других P'), которые почти оптимальны.</p>
+
+<h4 id="synthesis-step-1">Synthesis step</h4>
+
+<p>The <strong>synthesis step</strong> of stochastic superoptimisation находит следующую программу-кандидат <em>P’</em> путем построения выборки MCMC на основе предыдущей программы-кандидата <em>P</em>. Он предлагает <em>P’</em> путем случайного применения одной из нескольких мутаций к <em>P</em>:</p>
+
+<ul>
+  <li>changing the opcode of a randomly selected instruction</li>
+  <li>changing a random operand of a randomly selected instruction</li>
+  <li>inserting a new random instruction</li>
+  <li>swapping two randomly selected instructions</li>
+  <li>deleting an existing randomly selected instruction</li>
+</ul>
+
+<p>Выборочный модуль MCMC использует функцию стоимости, которая измеряет, насколько “близок” к целевой <em>P’</em> и насколько быстр <em>P’</em>, чтобы решить, <em>принимать ли</em> кандидата <em>P’</em>.
+ Вероятность того, что кандидат будет принят, выше, если он близок к цели или работает очень быстро. Но даже P, которые работают медленно или далеки от цели, имеют некоторую вероятность быть принятыми, гарантируя, что мы исследуем новые P' (это похоже на компромисс между исследованием и эксплойтом в задаче о <a href="http://en.wikipedia.org/wiki/Multi-armed_bandit">multi-armed bandit problem</a>).</p>
+
+<p>Если кандидат принят, мы переходим к этапу проверки. Если нет, мы повторяем этот процесс до тех пор, пока кандидат не будет принят.</p>
+
+<h4 id="verification-step-1">Verification step</h4>
+
+<p>Приняв программу-кандидат <em>P’</em>, the <strong>verification step</strong>
+ просто передает P' и O to the verifier, чтобы решить, эквивалентны ли они.В документе есть несколько хитростей, позволяющих сделать эту проверку немного более щадящей, например, получить правильный результат, но в другом регистре.</p>
+
+<p>Самый важный трюк заключается в том, что перед выполнением этапа verifier, который
+может быть медленным, stochastic superoptimisation сначала использует тестовые примеры
+из функции стоимости. Если какой-либо из тестовых примеров завершается неудачей, мы знаем
+, что P' не может быть правильной программой, и поэтому нет необходимости
+вызывать verifier. Эмпирически большинство плохих P', как правило, быстро терпят неудачу
+в этих тестовых примерах, и поэтому этот трюк значительно повышает
+пропускную способность поиска MCMC.</p>
+
+<h4 id="feedback-step-1">Feedback step</h4>
+
+<p>The <strong>feedback step</strong> of stochastic superoptimisation подразумевается в выборке MCMC. Мы сравниваем новые <em>P’</em> с ранее принятым кандидатом <em>P</em> чтобы решить, является ли <em>P’</em> программой, которую нам следует изучить. Если <em>P’</em> лучше, чем <em>P</em>
+ (т.е. имеет более высокую стоимость функции, и поэтому либо быстрее, либо ближе к цели, либо и то, и другое), мы обязательно изучим это. В противном случае все еще существует вероятность изучения <em>P’</em>; вероятность зависит от того, насколько хуже <em>P</em>.</p>
+
+<h3 id="enumerative-search">Enumerative search</h3>
+
+<p>Последний метод синтеза, который я собираюсь попытаться вписать в шаблон CEGIS, - enumerative search.  Это довольно очевидный подход brute force с изящным трюком, и, несмотря на его кажущуюся наивность, он был использован с большим эффектом, например, Удупой и др. в <a href="http://dl.acm.org/citation.cfm?id=2462174">synthesising distributed systems protocols</a>.</p>
+
+<p>Для <strong>спецификации</strong> мы собираемся использовать конечный набор тестовых примеров. Конечно, поскольку вы можете генерировать тестовые примеры, учитывая реализацию программы, было бы неплохо вместо этого использовать существующую реализацию, как мы сделали с oracle-guided synthesis и stochastic 
+superoptimisation. Мы также предполагаем, что у нас есть грамматика целевого языка. Для наших целей мы будем использовать простую грамматику, которая содержит две операции <code class="language-plaintext highlighter-rouge">add</code> и <code class="language-plaintext highlighter-rouge">sub</code>, а также две доступные переменные <code class="language-plaintext highlighter-rouge">x</code> и <code class="language-plaintext highlighter-rouge">y</code>. Грамматика определяет выражения над этими терминами, так что, например, <code class="language-plaintext highlighter-rouge">add(x, sub(x, y))</code> - это P в этой грамматике. Здесь нет инструкции о присвоении(как в SSA форме выше, помните?), которая облегчила бы нашу жизнь.</p>
+
+<h4 id="synthesis-step-2">Synthesis step</h4>
+
+<p>Идея enumerative search заключается в простом переборе всех возможных P. Мы разбиваем O(oracle) на уровни, основанные на самом глубоком пути в их дереве синтаксического анализа. апример, программа, которая просто возвращает <code class="language-plaintext highlighter-rouge">x</code> имеет нулевую глубину, в то время как программа <code class="language-plaintext highlighter-rouge">x+y</code> имеет глубину 1, а<code class="language-plaintext highlighter-rouge">(x+y)+x</code> имеет глубину 2.</p>
+
+<p>Мы <strong>synthesise(синтезируем)</strong> P' начиная с глубины 0 и перечисляем все программы на этой глубине(т.е. мы перебираем всё от P(которая была образована от P' выше) до P'). В нашей грамматике это означает, что первые два кандидата(P') - это просто две программы <code class="language-plaintext highlighter-rouge">x</code> и <code class="language-plaintext highlighter-rouge">y</code>.
+ Как только мы закончим с глубиной 0, мы переходим к следующей глубине 1 и повторяем процесс. На глубине 1 есть восемь программ-кандидатов, все они принимают форму <code class="language-plaintext highlighter-rouge">operation(a, b)</code>:</p>
+
+<p><img src="Program%20Synthesis%20Explained%20%E2%80%94%20James%20Bornholt_files/enumerative-1.png" alt="enumerative search level 1" width="50%"></p>
+
+<p>Обратите внимание, что возможные выражения для <code class="language-plaintext highlighter-rouge">a</code> и <code class="language-plaintext highlighter-rouge">b</code> в точности соответствуют программам глубины 0.Вот как мы выполняем перечисление: на глубине <em>k</em>, мы исследуем все программы формы<code class="language-plaintext highlighter-rouge">operation(a, b)</code>, где <code class="language-plaintext highlighter-rouge">a</code> и <code class="language-plaintext highlighter-rouge">b</code> - любое выражение глубины не более <em>k</em>-1. Этот поиск по динамическому программированию будет экспоненциальным на глубине <em>k</em>:
+ на глубине 2 каждая "яма" может быть заполнена одним из 8 выражений depth-1 или 2 выражения от depth-0, и по этой причине нам придется исследовать 2×(8+2)² = 200 programs; на глубине 3, нам придется исследовать 2×(200+8+2)² = 88,200 programs! Мы будем полагаться feedback step чтобы попытаться сократить это пространство поиска.</p>
+
+<h4 id="verification-step-2">Verification step</h4>
+
+<p>Поскольку мы определили программу в терминах тестовых примеров, то<strong>verification step</strong> заключается просто в выполнении всех тестовых примеров и сравнении выходных данных с целью. Если они совпадут, то мы выходим из алгоритма.</p>
+
+<h4 id="feedback-step-2">Feedback step</h4>
+
+<p>Выходные данные тестового примера также являются ключом к feedback step. Хитрость заключается в том, что при попытке заполнить пробелы в программах глубиной <em>k</em>, нам не нужно рассматривать <em>каждую</em>программу глубиной не более <em>k</em>-1. Вместо этого нам нужно рассматривать только те программы, которые имеют <em>различные</em> outputs. Например, нет смысла рассматривать как <code class="language-plaintext highlighter-rouge">sub(x, x)</code> и <code class="language-plaintext highlighter-rouge">sub(y, y)</code> – они оба имеют одинаковый эффект. Это понимание сокращает пространство поиска.</p>
+
+<p>Но как мы решаем, различны ли две программы? Вот тут-то и пригодятся тестовые примеры. Поскольку мы определили поведение целевой программы в терминах тестовых примеров, на самом деле не имеет значения, отличаются ли две программы семантически, а скорее только то, отличаются ли они <em>в тестовых примерах.</em>Итак, чтобы решить, отличается ли новая <em>P</em> от тех, что мы видели до сих пор, мы просто сравниваем выходные данные ее тестового примера с результатами любой другой программы. Если он соответствует существующей программе, то нет смысла сохранять <em>P</em>, и поэтому мы выбрасываем его.</p>
+
+<p>Например, если в каждом тестовом примере <em>y</em> = 0, то <code class="language-plaintext highlighter-rouge">add(x, y)</code> и <code class="language-plaintext highlighter-rouge">sub(x, y)</code> эквивалентны, хотя в целом это явно неверно. Мы получаем возможность сократить целую кучу программ, которые в целом семантически не эквивалентны, но эквивалентны для набора поведений, которые нас действительно волнуют.</p>
+
+<p>Оказывается, эта стратегия удивительно хорошо работает для решения некоторых проблем. При синтезе протоколов когерентности кэша Удупа и др. обнаружили, что сокращение сокращает пространство поиска почти в 100 раз = на глубине 10. Конечно, насколько хорошо это работает с вашей проблемой, будет зависеть как от набора моделей поведения, которые вас интересуют, так и от набора компонентов, которые вы включаете в грамматику.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>В ближайшее время мы не собираемся синтезировать целые приложения с нуля, но в любом случае это неосуществимая цель. Во многих случаях программы меньшего размера - это именно то, чего мы добиваемся от synthesis: мы можем попросить программиста соединить части высокого уровня вместе и автоматически заполнить мельчайшие детали. Это идея <em>создания эскизов</em>, которая послужила толчком к созданию <a href="http://dl.acm.org/citation.cfm?id=1168907">оригинальной CEGIS work</a>. Это также обращение к <a href="http://swreflections.blogspot.com/2013/11/applying-8020-rule-in-software.html">80-20 rule</a> – программы проводят большую часть своего времени в нескольких небольших областях кода, и поэтому синтез этих небольших частей все еще может обеспечить значительное повышение эффективности.</p>
+
+<p>Перспектива синтеза программ заключается в том, что программисты могут перестать указывать компьютерам,<em>как</em> что-то делать, и вместо этого сосредоточиться на том, чтобы говорить им, <em>что</em>
+ они хотят делать. Inductive program synthesis решает эту проблему с довольно расплывчатыми спецификациями, и, хотя многие алгоритмы кажутся неразрешимыми, на практике они работают на удивление хорошо. Запишите на свой счет еще одну победу эмпириков!</p>
+
+<div class="footnotes" role="doc-endnotes">
+  <ol>
+    <li id="fn:sorry" role="doc-endnote">
+      <p>Sorry, Luis! We mock because we love. <a href="#fnref:sorry" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:507" role="doc-endnote">
+      <p>Some of my explanations are inspired by (my awesome adviser) Emina Torlak’s <a href="http://courses.cs.washington.edu/courses/cse507/14au/">program synthesis course</a>. All mistakes are my own! <a href="#fnref:507" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+
+
+    </div>
+
+</body></html>
